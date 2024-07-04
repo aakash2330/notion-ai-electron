@@ -56,6 +56,7 @@ export default function ProfileForm() {
         addPageToDatabase({
           notionUrl: databaseID,
           content: "asdasd",
+
           topic: values.topic,
           trancriptSummary: "summary",
           videoId: "asdasd",
