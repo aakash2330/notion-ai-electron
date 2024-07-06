@@ -1,3 +1,6 @@
+import { CtaButton } from "@/components/cta-button";
+import HeroForm from "@/components/hero-form";
+
 export default function Home() {
   return (
     <div>
@@ -19,9 +22,12 @@ export default function Home() {
           </div>
           <br />
         </div>
+        <CtaButton></CtaButton>
       </div>
       <div className="flex h-screen items-center justify-center text-white">
-        <div className="w-[25rem] "></div>
+        <div className="w-[25rem] ">
+          <HeroForm></HeroForm>
+        </div>
       </div>
     </div>
   );

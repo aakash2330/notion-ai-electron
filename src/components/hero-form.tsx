@@ -1,5 +1,4 @@
 "use client";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,14 +22,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { formSchema, formType } from "@/types/types";
 import { addPageToDatabase } from "@/actions/add-page.action";
+import { gptAction } from "@/actions/openai.action";
+import { getFinalSummary } from "@/actions/youtube.action";
 
-//form schema
-
-export default function ProfileForm() {
-  //states
-
-  const [tabState, setTabState] = useState("Database");
-
+export default function HeroForm() {
   // defining the form
   const form = useForm<formType>({
     resolver: zodResolver(formSchema),
@@ -44,25 +39,22 @@ export default function ProfileForm() {
   //  submit handler
   async function onSubmit(values: formType) {
     console.log("Form submitted");
-    console.log({ tabState });
 
     try {
       // if user already has database then add the page to it
-      if (tabState === "Database") {
-        const databaseID = values.notionUrl.split(".so/")[1].split("?")[0];
-        console.log(databaseID);
-        // const youtubeData = await youtubeAction({ userPrompt: values.topic });
-        // const gptData = await gptAction({ userPrompt: values.topic });
-        addPageToDatabase({
-          notionUrl: databaseID,
-          content: "asdasd",
-
-          topic: values.topic,
-          trancriptSummary: "summary",
-          videoId: "asdasd",
-          notionKey: values.notionKey,
-        });
-      }
+      const databaseID = values.notionUrl.split(".so/")[1].split("?")[0];
+      const youtubeData = await getFinalSummary({ userPrompt: values.topic });
+      const gptData = await gptAction({ userPrompt: values.topic });
+      console.log({ databaseID, youtubeData, gptData });
+      addPageToDatabase({
+        notionUrl: databaseID,
+        content: gptData,
+        topic: values.topic,
+        trancriptSummary:
+          youtubeData?.summary ?? "oops we couldn't generate a summary for you",
+        videoId: youtubeData?.videoId,
+        notionKey: values.notionKey,
+      });
     } catch (error) {
       console.log(error);
     }
@@ -70,7 +62,11 @@ export default function ProfileForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        id="heroForm"
+        onSubmit={form.handleSubmit(onSubmit)}
+        className="space-y-8"
+      >
         <FormField
           control={form.control}
           name="topic"
@@ -102,53 +98,24 @@ export default function ProfileForm() {
         />
 
         <>
-          <Tabs defaultValue="Database">
-            <TabsList className="flex items-center justify-center bg-black">
-              <TabsTrigger
-                onClick={() => {
-                  setTabState("Database");
-                }}
-                value="Database"
-              >
-                Database
-              </TabsTrigger>
-              <TabsTrigger
-                onClick={() => {
-                  setTabState("Page");
-                }}
-                value="Page"
-              >
-                Page
-              </TabsTrigger>
-            </TabsList>
-            <FormField
-              control={form.control}
-              name="notionUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>URL</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="https://www.notion.so/example-XXXX"
-                      {...field}
-                    />
-                  </FormControl>
-                  <TabsContent value="Database">
-                    <FormDescription>Your Notion Database URL</FormDescription>
-                  </TabsContent>
-
-                  <TabsContent value="Page">
-                    <FormDescription>
-                      Your Notion Page URL , Select Database if you have already
-                      .
-                    </FormDescription>
-                  </TabsContent>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <br />
-          </Tabs>
+          <FormField
+            control={form.control}
+            name="notionUrl"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>URL</FormLabel>
+                <FormControl>
+                  <Input
+                    placeholder="https://www.notion.so/example-XXXX"
+                    {...field}
+                  />
+                </FormControl>
+                <FormDescription>Your Notion Database URL</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <br />
         </>
         <HoverCard>
           <HoverCardTrigger className="hover:underline cursor-pointer text-sm">

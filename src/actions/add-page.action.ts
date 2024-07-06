@@ -1,16 +1,13 @@
+"use server"
+
 import { addPageToDatabaseType } from "@/types/types";
 import { Client } from "@notionhq/client";
 
 export const addPageToDatabase = async (args: addPageToDatabaseType) => {
   const notion = new Client({ auth: args.notionKey });
   const parentDatabaseId = args.notionUrl;
+  console.log({ parentDatabaseId });
   const response = await notion.pages.create({
-    // "cover": {
-    //     "type": "external",
-    //     "external": {
-    //         "url": "https://upload.wikimedia.org/wikipedia/commons/6/62/Tuscankale.jpg"
-    //     }
-    // },
     icon: {
       type: "emoji",
       emoji: "✏️",
