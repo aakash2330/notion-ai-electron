@@ -7,6 +7,10 @@ export function CtaButton() {
     <Button
       onClick={() => {
         scrollTo("#heroForm");
+        fetch("http://localhost:3001/api/data")
+          .then((response) => response.json())
+          .then((data) => alert(data))
+          .catch((error) => console.error("Error:", error));
       }}
     >
       Get Started

@@ -21,9 +21,6 @@ import {
 import { useState } from "react";
 import Link from "next/link";
 import { formSchema, formType } from "@/types/types";
-import { addPageToDatabase } from "@/actions/add-page.action";
-import { gptAction } from "@/actions/openai.action";
-import { getFinalSummary } from "@/actions/youtube.action";
 
 export default function HeroForm() {
   // defining the form
@@ -43,10 +40,18 @@ export default function HeroForm() {
     try {
       // if user already has database then add the page to it
       const databaseID = values.notionUrl.split(".so/")[1].split("?")[0];
-      const youtubeData = await getFinalSummary({ userPrompt: values.topic });
-      const gptData = await gptAction({ userPrompt: values.topic });
+
+      const { data: youtubeData } = await fetchYoutubeData({
+        userPrompt: values.topic,
+      });
+
+      const { data: gptData } = await fetchGptData({
+        userPrompt: values.topic,
+      });
       console.log({ databaseID, youtubeData, gptData });
-      addPageToDatabase({
+
+      // Example of using the function
+      addPage({
         notionUrl: databaseID,
         content: gptData,
         topic: values.topic,
@@ -54,6 +59,8 @@ export default function HeroForm() {
           youtubeData?.summary ?? "oops we couldn't generate a summary for you",
         videoId: youtubeData?.videoId,
         notionKey: values.notionKey,
+      }).then((data) => {
+        console.log("Page addition result:", data);
       });
     } catch (error) {
       console.log(error);
@@ -135,4 +142,85 @@ export default function HeroForm() {
       </form>
     </Form>
   );
+}
+
+async function fetchYoutubeData(args: any) {
+  try {
+    const response = await fetch("http://localhost:3001/api/youtube", {
+      method: "POST", // Set the request method
+      headers: {
+        "Content-Type": "application/json", // Indicate JSON data format
+      },
+      body: JSON.stringify(args), // Send the arguments in the request body
+    });
+
+    // Check if the response is OK
+    if (!response.ok) {
+      throw new Error("Failed to fetch data");
+    }
+
+    // Parse the JSON response
+    const data = await response.json();
+    console.log(data);
+
+    // Handle the response data as needed
+    return data;
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return { data: null }; // Return null data in case of an error
+  }
+}
+
+async function fetchGptData(args: any) {
+  try {
+    const response = await fetch("http://localhost:3001/api/openai", {
+      method: "POST", // Specify the POST method
+      headers: {
+        "Content-Type": "application/json", // Ensure the request body is JSON
+      },
+      body: JSON.stringify(args), // Convert the args object to a JSON string
+    });
+
+    // Check if the response status is OK
+    if (!response.ok) {
+      throw new Error("Failed to fetch data");
+    }
+
+    // Parse the response body as JSON
+    const data = await response.json();
+    console.log(data);
+
+    // Return the received data
+    return data;
+  } catch (error) {
+    console.error("Error fetching GPT data:", error);
+    return { data: false }; // Return false data in case of an error
+  }
+}
+
+async function addPage(args: any) {
+  try {
+    const response = await fetch("http://localhost:3001/api/addpage", {
+      method: "POST", // Specify the POST method
+      headers: {
+        "Content-Type": "application/json", // Ensure the request body is JSON
+      },
+      body: JSON.stringify(args), // Convert the args object to a JSON string
+    });
+
+    // Check if the response status is OK
+    if (!response.ok) {
+      throw new Error("Failed to add page");
+    }
+
+    // Parse the response as JSON
+    const data = await response.json();
+    console.log(data);
+
+    // Return the result, indicating success or failure
+    return data;
+  } catch (error) {
+    console.error("Error adding page:", error);
+    return { data: null }; // Return null in case of an error
+  }
 }
